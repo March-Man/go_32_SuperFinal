@@ -19,6 +19,9 @@ func main() {
 	if err := db.Init(dbFile); err != nil {
 		log.Fatal(err)
 	}
+
+	defer db.GetDB().Close()
+
 	log.Printf("База данных готова: %s", dbFile)
 
 	webDir := "./web"

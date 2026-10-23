@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 
@@ -25,18 +26,18 @@ func signInHandler(w http.ResponseWriter, r *http.Request) {
 		Password string `json:"password"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeJSON(w, map[string]string{"error": "ошибка десериализации"})
+		writeJSON(w, map[string]string{"error": "ошибка десериализации"}, http.StatusBadRequest)
 		return
 	}
 
 	expectedPass := os.Getenv("TODO_PASSWORD")
 	if expectedPass == "" {
-		writeJSON(w, map[string]string{"token": ""})
+		writeJSON(w, map[string]string{"token": ""}, http.StatusOK)
 		return
 	}
 
 	if req.Password != expectedPass {
-		writeJSON(w, map[string]string{"error": "Неверный пароль"})
+		writeJSON(w, map[string]string{"error": "Неверный пароль"}, http.StatusUnauthorized)
 		return
 	}
 
@@ -50,11 +51,12 @@ func signInHandler(w http.ResponseWriter, r *http.Request) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	tokenString, err := token.SignedString(jwtKey)
 	if err != nil {
-		writeJSON(w, map[string]string{"error": "ошибка создания токена"})
+		log.Printf("ошибка создания токена: %v", err)
+		writeJSON(w, map[string]string{"error": "Внутренняя ошибка"}, http.StatusInternalServerError)
 		return
 	}
 
-	writeJSON(w, map[string]string{"token": tokenString})
+	writeJSON(w, map[string]string{"token": tokenString}, http.StatusOK)
 }
 
 // auth is a middleware that validates JWT authentication for protected routes.

@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"time"
 
@@ -13,25 +14,26 @@ import (
 func addTaskHandler(w http.ResponseWriter, r *http.Request) {
 	var task db.Task
 	if err := json.NewDecoder(r.Body).Decode(&task); err != nil {
-		writeJSON(w, map[string]string{"error": "ошибка десериализации: " + err.Error()})
+		writeJSON(w, map[string]string{"error": "ошибка десериализации: " + err.Error()}, http.StatusBadRequest)
 		return
 	}
 	if task.Title == "" {
-		writeJSON(w, map[string]string{"error": "не указан заголовок задачи"})
+		writeJSON(w, map[string]string{"error": "не указан заголовок задачи"}, http.StatusBadRequest)
 		return
 	}
 	if err := checkDate(&task); err != nil {
-		writeJSON(w, map[string]string{"error": err.Error()})
+		writeJSON(w, map[string]string{"error": err.Error()}, http.StatusBadRequest)
 		return
 	}
 
 	id, err := db.AddTask(&task)
 	if err != nil {
-		writeJSON(w, map[string]string{"error": err.Error()})
+		log.Printf("ошибка добавления задачи: %v", err)
+		writeJSON(w, map[string]string{"error": "Внутренняя ошибка"}, http.StatusInternalServerError)
 		return
 	}
 
-	writeJSON(w, map[string]string{"id": fmt.Sprintf("%d", id)})
+	writeJSON(w, map[string]string{"id": fmt.Sprintf("%d", id)}, http.StatusOK)
 }
 
 // checkDate validates and corrects the task's date based on the repeat rule.
@@ -66,9 +68,9 @@ func checkDate(task *db.Task) error {
 	return nil
 }
 
-// writeJSON writes the given data as a JSON response with the appropriate headers.
-func writeJSON(w http.ResponseWriter, data any) {
+// writeJSON writes the given data as a JSON response with the appropriate headers and status code.
+func writeJSON(w http.ResponseWriter, data any, statusCode int) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	w.WriteHeader(http.StatusOK)
+	w.WriteHeader(statusCode)
 	json.NewEncoder(w).Encode(data)
 }

@@ -25,7 +25,7 @@
   -e TODO_DBFILE=/app/scheduler.db \
   -e TODO_PASSWORD=12345 \
   -v $(pwd)/scheduler.db:/app/scheduler.db \
-  scheduler:v1)
+  scheduler:v2)
 7. Перейти по ссылке `http://localhost:7540/`
 8. Вводим пароль (12345)
 9. Убеждаемся, что все работает правильно
